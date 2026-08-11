@@ -1,0 +1,314 @@
+/*
+ * The club desk — teams index, the roster, the team sheet, corrections.
+ *
+ * Only layout the shared primitives don't already carry lives here. Every colour, rule weight and
+ * face comes from the tokens; nothing is invented. Square throughout, as the design demands.
+ */
+
+/* ── labelled field ───────────────────────────────────────────────────────── */
+.field {
+  margin-top: 16px;
+}
+.fieldLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+/* ── toggle chips — the outlined answer to a segmented control ────────────── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 2px solid var(--rule-soft);
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 0;
+}
+.chip:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.chipOn {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: rgba(20, 19, 17, 0.06);
+}
+
+/* ── stepper card: −  VALUE  + inside a 2px box ───────────────────────────── */
+.stepCard {
+  border: 2px solid var(--ink);
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+.stepRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.stepValue {
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+/* ── the add-a-name row ───────────────────────────────────────────────────── */
+.addRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.addInput {
+  flex: 1;
+  height: 48px;
+  min-height: 48px;
+}
+
+/* ── roster list ──────────────────────────────────────────────────────────── */
+.list {
+  margin-top: 18px;
+  border-top: 3px solid var(--ink);
+}
+/* touch-action:none so a drag on the handle reorders instead of scrolling the page. */
+.handle {
+  touch-action: none;
+  cursor: grab;
+}
+.handleDrag {
+  cursor: grabbing;
+}
+/* An ink rule round the row being moved — the primitive's row sets its own background, and an
+   outline can't be lost to stylesheet order. */
+.dragging {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.tagBtn {
+  max-width: 48%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── footer over a heavy rule ─────────────────────────────────────────────── */
+.foot {
+  margin-top: 22px;
+  border-top: 3px solid var(--ink);
+  padding-top: 18px;
+}
+.footRow {
+  display: flex;
+  gap: 8px;
+}
+.footNote {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── teams index ──────────────────────────────────────────────────────────── */
+.entry {
+  padding: 14px 0;
+  border-bottom: 1px dotted var(--rule-hair);
+}
+.entryLast {
+  border-bottom: none;
+}
+.entryLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.entryLink:hover {
+  text-decoration: none;
+}
+.entryName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entryLink:hover .entryName {
+  color: var(--red);
+}
+.chev {
+  color: var(--ink-muted);
+  font-size: 20px;
+}
+.entryMeta {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.entryActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ── match list ───────────────────────────────────────────────────────────── */
+.matchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px dotted var(--rule-hair);
+}
+.matchRowLast {
+  border-bottom: none;
+}
+.matchLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 8px 0;
+  color: inherit;
+  text-decoration: none;
+}
+.matchLink:hover {
+  text-decoration: none;
+  color: var(--red);
+}
+.matchMain {
+  flex: 1;
+  min-width: 0;
+}
+.matchName {
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.matchSub {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.badge {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: right;
+}
+.badgeLive {
+  color: var(--red);
+}
+.badgeDone {
+  color: var(--st-on);
+}
+.badgeSetup {
+  color: var(--ink-muted);
+}
+
+/* ── squad line on the team sheet ─────────────────────────────────────────── */
+.squadRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px;
+  border-bottom: 1px dotted var(--rule-hair);
+}
+.squadRowLast {
+  border-bottom: none;
+}
+.squadName {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.squadTag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* ── empty column ─────────────────────────────────────────────────────────── */
+.emptyBlock {
+  padding: 26px 0 4px;
+  text-align: center;
+}
+.emptyHed {
+  font-family: var(--font-display);
+  font-size: 22px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── notices ──────────────────────────────────────────────────────────────── */
+.error {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--red);
+}
+.deadline {
+  margin: 24px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink);
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.deadline a {
+  color: var(--ink-muted);
+}
+.deadline a:hover {
+  color: var(--red);
+}
+.linkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.linkBtn:hover {
+  color: var(--red);
+}

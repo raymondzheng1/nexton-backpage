@@ -1,0 +1,130 @@
+/*
+ * NextOn "Back Page" — a tabloid newspaper back page.
+ *
+ * Newsprint paper, black ink, one red accent. Everything is square except the CTAs; rules do the
+ * work that shadows and radii do elsewhere. The palette is fixed rather than themed: a newspaper is
+ * a newspaper, and "dark mode newsprint" is a contradiction. `color-scheme: light` stops the browser
+ * from helpfully inverting it.
+ */
+:root {
+  color-scheme: light;
+
+  /* ── ink and paper ── */
+  --paper: #f5f2ea;
+  --paper-white: #ffffff; /* insets that should read as a whiter stock */
+  --ink: #141311;
+  --ink-body: #33302a; /* running text */
+  --ink-muted: #4a453c; /* datelines, labels, column headers */
+  --red: #d92b21;
+  --red-dark: #b01f16; /* link hover */
+  --red-press: #c1251c; /* CTA hover */
+  --halftone: #c9c4b8;
+  --yellow: #f0b429; /* classifieds strip only */
+
+  /* ── status: ALWAYS paired with a glyph and a word, never colour alone ── */
+  --st-on: #0b6b3a; /* ✓ ON TRK  */
+  --st-under: #2f6fbf; /* ▲ NEEDS   */
+  --st-over: #d92b21; /* ▼ REST    */
+
+  /* ── rules ── */
+  --rule-hair: rgba(20, 19, 17, 0.35); /* 1px dotted table separators */
+  --rule-soft: rgba(20, 19, 17, 0.25); /* light outlines */
+  --rule-track: rgba(20, 19, 17, 0.1); /* bar chart tracks */
+
+  /* ── measure ── */
+  --gutter: 18px; /* marketing page */
+  --gutter-app: 16px; /* app screens */
+  --tap: 44px;
+  --cta-h: 52px;
+  --r-cta: 6px; /* the ONLY radius in the design */
+
+  --font-display: var(--font-anton), "Arial Narrow", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* Newspapers do not bounce. */
+  overscroll-behavior-y: none;
+}
+
+/* Every number in this product is a measurement — align them. */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400; /* Anton ships one weight; asking for 700 gets a synthetic bold */
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  line-height: 1;
+}
+
+a {
+  color: var(--red);
+  font-weight: 800;
+  text-decoration: none;
+}
+a:hover {
+  color: var(--red-dark);
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Keyboard focus has to survive a design with almost no chrome. */
+:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  /* ≥16px or iOS zooms the whole page on focus. */
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 0 12px;
+  min-height: 48px;
+  width: 100%;
+}
+input::placeholder {
+  color: var(--ink-muted);
+}
+
+/* Respect the reader. The design is static anyway; this covers the toast/flash niceties. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,653 @@
+/*
+ * LIVE DESK — the match screen.
+ *
+ * Everything here is layout the shared primitives don't already carry. No new colours, no new
+ * typeface, no radii: the rule weights and the one red do all the work, exactly as elsewhere.
+ * Where a class only exists to give a flex child a width, it is named for the column it is.
+ */
+
+/* ── inverted header ──────────────────────────────────────────────────────── */
+.liveTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.liveBrand {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+/* Back out of a live match — a 44px target that doesn't compete with the clock. */
+.liveBack {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-left: -12px;
+  font-size: 18px;
+  color: var(--paper);
+  text-decoration: none;
+  font-weight: 400;
+}
+.liveBack:hover {
+  color: var(--paper);
+  text-decoration: none;
+  opacity: 0.7;
+}
+/* Paused: the bug stays, the red dot doesn't — a stopped clock is not live. */
+.liveDotOff {
+  background: var(--halftone);
+}
+.clockRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 6px;
+}
+/* Basketball's period clock runs DOWN; elapsed still leads, this rides beside it. */
+.clockAside {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.clockAsideValue {
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+.clockAsideLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--halftone);
+}
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* ── content column ───────────────────────────────────────────────────────── */
+/* Pushes the sticky action bar to the foot of a short page without fighting .page. */
+.grow {
+  flex: 1 1 auto;
+}
+.panel {
+  margin-top: 14px;
+}
+.caption {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 6px 0 0;
+}
+.footnote {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 8px 0 0;
+}
+.footnoteBar {
+  text-align: center;
+  margin-top: 8px;
+}
+.body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-body);
+  margin: 6px 0 0;
+}
+.empty {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin: 10px 0 0;
+}
+
+/* ── NEXT CHANGE panel ────────────────────────────────────────────────────── */
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.panelTitle {
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-transform: uppercase;
+}
+.panelCount {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--red);
+}
+.progress {
+  margin-top: 8px;
+  height: 8px;
+  background: rgba(20, 19, 17, 0.12);
+}
+.progressFill {
+  height: 100%;
+  background: var(--red);
+  transition: width 1s linear;
+}
+.swaps {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* One suggested change. A button, because tapping it opens the editable sheet. */
+.swapRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: left;
+}
+.swapRow:hover {
+  border-color: var(--ink);
+}
+.swapOff {
+  color: var(--red);
+}
+.swapArrow {
+  color: var(--ink-muted);
+}
+.swapPos {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.panelBtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.panelBtns > :first-child {
+  flex: 1;
+}
+/* Outlined companion to the ink CTA, sized to the design's 48px row. */
+.snoozeBtn {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: none;
+}
+.snoozeBtn:hover {
+  background: rgba(20, 19, 17, 0.06);
+}
+
+/* ── squad tables ─────────────────────────────────────────────────────────── */
+.squadRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 2px;
+  border: none;
+  border-bottom: 1px dotted var(--rule-hair);
+  background: transparent;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  min-height: var(--tap);
+}
+.squadRowLast {
+  border-bottom: none;
+}
+.squadRow:disabled {
+  cursor: default;
+}
+/* Selected: a red spine down the row. Never colour alone — the action bar names them too. */
+.squadRowSel {
+  box-shadow: inset 3px 0 0 var(--red);
+  background: rgba(217, 43, 33, 0.06);
+  padding-left: 10px;
+}
+/* Just came on / just scored — a beat of emphasis, then back to plain newsprint. */
+.squadRowFlash {
+  background: rgba(217, 43, 33, 0.12);
+}
+/* The engine is suggesting this player comes off. */
+.squadRowPulse {
+  outline: 2px dashed var(--red);
+  outline-offset: -2px;
+}
+.rowName {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowSlot {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.rowScore {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+.rowMins {
+  font-size: 15px;
+  font-weight: 800;
+  width: 44px;
+  text-align: right;
+  flex: none;
+}
+.rowStatus {
+  width: 76px;
+  text-align: right;
+  flex: none;
+}
+
+/* ── out for the match ────────────────────────────────────────────────────── */
+.outList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.outBtn {
+  min-height: var(--tap);
+  padding: 6px 10px;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
+  border-radius: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.outBtn:hover:enabled {
+  border-color: var(--ink);
+}
+.outBtn:disabled {
+  opacity: 0.5;
+}
+.outMins {
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+
+/* ── collapsible sections (match report · still to come) ──────────────────── */
+.detailsHead {
+  font-family: var(--font-display);
+  font-size: 18px;
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--ink);
+  padding-bottom: 6px;
+  margin-top: 22px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+}
+.detailsHead::-webkit-details-marker {
+  display: none;
+}
+.detailsMark {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-muted);
+}
+.details[open] .detailsMarkClosed {
+  display: none;
+}
+.details:not([open]) .detailsMarkOpen {
+  display: none;
+}
+
+/* ── match report ─────────────────────────────────────────────────────────── */
+.logRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 2px;
+  border-bottom: 1px dotted var(--rule-hair);
+  font-size: 13px;
+}
+.logRowLast {
+  border-bottom: none;
+}
+.logTime {
+  font-family: var(--font-display);
+  font-size: 14px;
+  min-width: 48px;
+  flex: none;
+}
+.logText {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-body);
+}
+.logClock {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  flex: none;
+}
+
+/* ── rotation dial ────────────────────────────────────────────────────────── */
+.dialWrap {
+  margin-top: 12px;
+}
+.dialHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dialLevel {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--red);
+}
+/* The global input rule is for text fields; a range needs none of it. */
+.dial {
+  width: 100%;
+  height: var(--tap);
+  min-height: var(--tap);
+  margin: 2px 0 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: var(--red);
+}
+.dialEnds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: -4px;
+}
+
+/* ── plan (upcoming windows + pre-match editor) ───────────────────────────── */
+.planRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 2px;
+  border-bottom: 1px dotted var(--rule-hair);
+  font-size: 13.5px;
+}
+.planRowLast {
+  border-bottom: none;
+}
+.planTime {
+  font-family: var(--font-display);
+  font-size: 14px;
+  min-width: 48px;
+  flex: none;
+}
+.planNext {
+  color: var(--red);
+  font-weight: 800;
+}
+.planText {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-body);
+}
+
+.winList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.winHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.winTime {
+  font-family: var(--font-display);
+  font-size: 18px;
+  flex: 1;
+  text-align: center;
+}
+.winStep {
+  width: var(--tap);
+  height: var(--tap);
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  font-size: 20px;
+  font-weight: 800;
+  flex: none;
+}
+.winStep:hover {
+  background: rgba(20, 19, 17, 0.06);
+}
+.winSwap {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.winLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.winSlot {
+  grid-column: 2;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── selected-player actions ──────────────────────────────────────────────── */
+.barCol {
+  flex-direction: column;
+  align-items: stretch;
+}
+.selHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  text-transform: uppercase;
+}
+.selSlot {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
+  color: var(--ink-muted);
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: none;
+}
+.chip:hover:enabled {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.chipOn {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.chip:disabled {
+  opacity: 0.4;
+}
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.miniBtn {
+  min-height: var(--tap);
+  padding: 0 8px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.miniBtn:hover {
+  background: rgba(20, 19, 17, 0.06);
+}
+.miniBtnInk {
+  background: var(--ink);
+  color: var(--paper);
+}
+.miniBtnInk:hover {
+  background: #000;
+}
+.miniBtnRed {
+  border-color: var(--red);
+  color: var(--red);
+}
+.miniBtnRed:hover {
+  background: rgba(217, 43, 33, 0.08);
+}
+
+/* ── sheets ───────────────────────────────────────────────────────────────── */
+.sheetTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-transform: uppercase;
+  margin: 0;
+}
+.sheetStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.sheetRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sheetRow > * {
+  flex: 1;
+}
+/* Preview of the XI the confirm would leave on the pitch. */
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px dotted var(--rule-hair);
+  font-size: 14px;
+  font-weight: 700;
+}
+.previewIn {
+  color: var(--red);
+  font-weight: 800;
+}
+.previewTag {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.skipBtn {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
+  color: var(--ink-muted);
+  border-radius: 0;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+}
+.skipBtn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+.addRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 6px;
+}
+.addRow > input {
+  flex: 1;
+}
+
+/* The shared hold button is a body-font control; the design prints it in caps. */
+.holdCaps {
+  text-transform: uppercase;
+}

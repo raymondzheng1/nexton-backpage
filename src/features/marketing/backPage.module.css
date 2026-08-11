@@ -1,0 +1,312 @@
+/*
+ * The Back Page. Designed at 390px; ≥768px centres a single ~560px column and scales the headline
+ * to ~76px, per the handoff. Never narrower than the 390px design width.
+ */
+.paper {
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+}
+
+/* ── masthead ── */
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px var(--gutter);
+  padding-top: calc(12px + env(safe-area-inset-top));
+  border-bottom: 3px double var(--ink);
+}
+.edition,
+.mastheadLink {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.mastheadLink {
+  color: var(--red);
+  font-weight: 800;
+}
+
+/* ── dateline ── */
+.dateline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px var(--gutter);
+  border-bottom: 1px solid var(--ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── headline ── */
+.hedBlock {
+  padding: 22px var(--gutter) 0;
+}
+.hed {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 58px;
+  line-height: 0.96;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+.hedRed {
+  color: var(--red);
+}
+.standfirst {
+  margin: 14px 0 0;
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: var(--ink-body);
+  border-top: 1px solid var(--ink);
+  padding-top: 12px;
+}
+.trustRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  justify-content: center;
+  flex-wrap: wrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+/* ── the match photo ── */
+.figureWrap {
+  padding: 24px var(--gutter) 0;
+}
+.figure {
+  margin: 0;
+  border: 1px solid var(--ink);
+  padding: 10px;
+}
+/* Halftone: a dot screen over flat newsprint grey, exactly as a scanned photo prints. */
+.halftone {
+  position: relative;
+  height: 230px;
+  background-color: var(--halftone);
+  background-image: radial-gradient(circle, rgba(20, 19, 17, 0.22) 1px, transparent 1.4px);
+  background-size: 5px 5px;
+  overflow: hidden;
+}
+.pitchLines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.playerLeo,
+.playerAva {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.playerLeo {
+  left: 24%;
+  top: 34%;
+}
+.playerAva {
+  left: 78%;
+  top: 78%;
+}
+
+.discOutline,
+.discSolid {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 15px;
+}
+.discOutline {
+  border: 3px solid var(--red);
+  background: rgba(245, 242, 234, 0.7);
+}
+.discSolid {
+  border: 3px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.capOff,
+.capOn {
+  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.capOff {
+  color: var(--red);
+}
+.figCaption {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-body);
+}
+
+/* ── sections ── */
+.section {
+  padding: 26px var(--gutter) 0;
+}
+.sectionHead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 19px;
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--ink);
+  padding-bottom: 6px;
+}
+
+/* ── box score ── */
+.scoreGrid {
+  display: grid;
+  grid-template-columns: 1fr 52px 44px 40px;
+  gap: 6px;
+}
+.scoreHead {
+  padding: 8px 2px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--ink);
+}
+.scoreRow {
+  padding: 9px 2px;
+  font-size: 15px;
+  font-weight: 700;
+  border-bottom: 1px dotted var(--rule-hair);
+}
+.scoreRowLast {
+  border-bottom: none;
+}
+.right {
+  text-align: right;
+}
+.check {
+  color: var(--st-on);
+}
+.scoreFoot {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 3px solid var(--ink);
+  padding-top: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.footRed {
+  color: var(--red);
+  text-align: right;
+}
+.specimen {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* ── column ── */
+.column {
+  margin: 26px var(--gutter) 0;
+  border: 3px solid var(--ink);
+  padding: 14px 16px;
+}
+.columnHead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+.columnBody {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+/* ── classifieds ── */
+.classifieds {
+  margin: 22px var(--gutter) 0;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.classifiedsLink {
+  color: var(--yellow);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.classifiedsLink:hover {
+  color: var(--yellow);
+}
+
+/* ── footer ── */
+.footer {
+  padding: 26px var(--gutter) calc(40px + env(safe-area-inset-bottom));
+  text-align: center;
+  border-top: 1px solid var(--ink);
+  margin-top: 26px;
+}
+.footTrust {
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+.footLetters {
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+}
+.footLink {
+  color: var(--red);
+  font-weight: 800;
+}
+
+/* ≥768px: the broadsheet gets a bigger splash headline, gutters stay proportional. */
+@media (min-width: 768px) {
+  .hed {
+    font-size: 76px;
+  }
+  .standfirst {
+    font-size: 18px;
+  }
+}
