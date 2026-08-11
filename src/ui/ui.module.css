@@ -46,6 +46,13 @@
 .wordmarkLarge {
   font-size: 22px;
 }
+/*
+ * On the inverted ink header the default ink wordmark is black on black — only the red "ON"
+ * survives, which is how the live screen briefly shipped. Any dark surface must use this.
+ */
+.wordmarkOnInk {
+  color: var(--paper);
+}
 .wordmarkOn {
   color: var(--red);
 }

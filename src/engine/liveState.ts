@@ -40,6 +40,7 @@ export function initLiveState(match: Match, players: Player[]): LiveState {
     status: "pre-match",
     period: 1,
     elapsedSeconds: 0,
+    periodStartedAtSeconds: 0,
     players: playersState,
   };
 }
@@ -76,6 +77,7 @@ export function applyEvent(state: LiveState, event: MatchEvent): LiveState {
       next.status = "running";
       next.period = 1;
       next.elapsedSeconds = 0;
+      next.periodStartedAtSeconds = 0; // period 1 starts at kickoff, by definition
       for (const a of event.lineup) {
         const ps = requirePlayer(next, a.playerId);
         ps.onField = true;
@@ -123,6 +125,10 @@ export function applyEvent(state: LiveState, event: MatchEvent): LiveState {
     case "PERIOD_STARTED": {
       next.status = "running";
       next.period = event.period;
+      // WHERE this period begins on the match clock — the anchor every "how far into the period are
+      // we?" question is measured from. The coach may have ended the last one early, so this is not
+      // necessarily (period − 1) × periodLength (see LiveState.periodStartedAtSeconds).
+      next.periodStartedAtSeconds = event.atSeconds;
       // A new period is a fresh stint window (half-time rest resets just-subbed protection).
       for (const ps of Object.values(next.players)) {
         if (ps.onField) ps.secondsThisStint = 0;

@@ -32,7 +32,7 @@ import {
 } from "@/engine";
 import { useAppStore } from "./appStore";
 import { getRepo } from "./clientRepo";
-import { periodLengthSeconds, shouldKeepNextChange, wallClockCatchUp } from "./clock";
+import { periodEndSeconds, shouldKeepNextChange, wallClockCatchUp } from "./clock";
 import type { SavedMatch } from "./schema";
 import { reportActivity } from "./telemetry";
 
@@ -409,7 +409,7 @@ export const useLiveStore = create<LiveStoreState>((set, get) => {
       // catch-up tick doesn't overshoot and inflate minutes (PRD §8.3). The FINAL period is NOT
       // capped — the clock rolls past full time into added time, and the page prompts the coach to
       // end (or play on), reflecting real stoppage time (item 6).
-      const periodEnd = live.period * periodLengthSeconds(match);
+      const periodEnd = periodEndSeconds(match, live);
       const isFinalPeriod = live.period >= match.config.periods;
       const target = isFinalPeriod ? live.elapsedSeconds + rawDelta : Math.min(live.elapsedSeconds + rawDelta, periodEnd);
       const delta = target - live.elapsedSeconds;

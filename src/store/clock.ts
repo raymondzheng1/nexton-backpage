@@ -30,11 +30,50 @@ export function totalSeconds(match: SavedMatch): number {
 
 /**
  * Seconds played so far IN THE CURRENT PERIOD. `elapsedSeconds` accumulates across the whole match,
- * so the current quarter/half is what's left after subtracting the periods already finished.
+ * so the current quarter/half is what's left after subtracting where it began.
+ *
+ * Measured from `live.periodStartedAtSeconds`, NOT from `(period − 1) × periodLength`: the coach can
+ * end a period early, after which the two disagree and only the first one is true.
  */
-export function elapsedInPeriodSeconds(match: SavedMatch, live: LiveState): number {
-  const periodLen = periodLengthSeconds(match);
-  return Math.max(0, live.elapsedSeconds - (live.period - 1) * periodLen);
+export function elapsedInPeriodSeconds(live: LiveState): number {
+  return Math.max(0, live.elapsedSeconds - live.periodStartedAtSeconds);
+}
+
+/**
+ * The match-clock second at which the current period is due to end: where it actually started, plus
+ * one period's length. The FINAL period runs past this into added time (the coach ends it); every
+ * earlier one auto-pauses here for the break.
+ */
+export function periodEndSeconds(match: SavedMatch, live: LiveState): number {
+  return live.periodStartedAtSeconds + periodLengthSeconds(match);
+}
+
+/**
+ * The match second at which REGULATION time is up — when the coach gets asked "end it, or play on
+ * into added time?".
+ *
+ * Not simply {@link totalSeconds}: once a period has been ended early the clock lags the schedule
+ * permanently, so what matters is when the FINAL period has run ITS length from where it really
+ * started. End three quarters of a 4×15 early and a fixed 60:00 whistle would arrive minutes after
+ * the game was actually over. Before the final period the scheduled total is still the answer — the
+ * clock auto-breaks at every earlier boundary long before it's reached.
+ */
+export function regulationEndSeconds(match: SavedMatch, live: LiveState): number {
+  return live.period >= match.config.periods ? periodEndSeconds(match, live) : totalSeconds(match);
+}
+
+/**
+ * May the coach end the current period EARLY? Youth games finish a period early all the time — the
+ * ref blows up, it's freezing, a team has to leave — and Pause alone leaves the match stuck
+ * mid-period forever.
+ *
+ * Offered only while the clock is running, and NEVER in the final period: ending that early is
+ * ending the match, which "End match" already does properly (full-time summary, season totals).
+ * The rule lives here rather than inline in the screen so there is exactly one of it, and it can be
+ * tested without a browser.
+ */
+export function canEndPeriodEarly(match: SavedMatch, live: LiveState): boolean {
+  return live.status === "running" && live.period < match.config.periods;
 }
 
 /**
@@ -46,7 +85,7 @@ export function elapsedInPeriodSeconds(match: SavedMatch, live: LiveState): numb
  * reads 0:00 and stays there.
  */
 export function remainingInPeriodSeconds(match: SavedMatch, live: LiveState): number {
-  return Math.max(0, periodLengthSeconds(match) - elapsedInPeriodSeconds(match, live));
+  return Math.max(0, periodLengthSeconds(match) - elapsedInPeriodSeconds(live));
 }
 
 export interface ClockCatchUp {
@@ -89,14 +128,16 @@ export function wallClockCatchUp(live: LiveState, match: SavedMatch, nowMs: numb
     const anchorMs = Date.parse(match.clockAnchor.wallClockISO);
     if (!Number.isNaN(anchorMs)) {
       const trueElapsed = match.clockAnchor.elapsedSeconds + (nowMs - anchorMs) / 1000;
-      const periodEnd = live.period * periodLengthSeconds(match);
+      const periodEnd = periodEndSeconds(match, live);
       const isFinalPeriod = live.period >= match.config.periods;
       // Earlier periods auto-pause at their boundary (half-time). The FINAL period rolls on PAST full
       // time into added time (the coach ends it manually, item 6) — but UNATTENDED catch-up is capped
-      // at total + half a period of added time: a match left running and reopened hours/days later
-      // must not credit every on-field player with the whole gap (it would poison season totals).
-      // While the app is open and ticking (coach present), added time still rolls uncapped.
-      const addedTimeCap = totalSeconds(match) + periodLengthSeconds(match) / 2;
+      // at its own end plus half a period of added time: a match left running and reopened hours/days
+      // later must not credit every on-field player with the whole gap (it would poison season
+      // totals). Anchored to where the final period actually started, so ending an earlier period
+      // early moves the cap with it instead of granting the lost minutes back as added time. While
+      // the app is open and ticking (coach present), added time still rolls uncapped.
+      const addedTimeCap = periodEnd + periodLengthSeconds(match) / 2;
       const target = isFinalPeriod ? Math.min(trueElapsed, addedTimeCap) : Math.min(trueElapsed, periodEnd);
       delta = Math.floor(target - live.elapsedSeconds);
       if (delta > 0) {

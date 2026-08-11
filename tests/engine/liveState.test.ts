@@ -78,6 +78,41 @@ describe("clock + event reducer (PRD §6.5, §8.3)", () => {
     expect(s.players[onId]!.secondsThisStint).toBe(60); // a new period is a fresh stint
   });
 
+  it("records WHERE each period started, so an early end can't stretch the next one", () => {
+    const { state } = startedState();
+    expect(state.periodStartedAtSeconds).toBe(0); // period 1 starts at kickoff, by definition
+
+    // The ref calls the first half at 12:00 of a scheduled 25.
+    let s = applyEvent(state, { type: "TICK", atSeconds: 720, deltaSeconds: 720 });
+    s = applyEvent(s, { type: "PERIOD_ENDED", atSeconds: 720, period: 1 });
+    expect(s.periodStartedAtSeconds).toBe(0); // the break belongs to the period that just ended
+
+    s = applyEvent(s, { type: "PERIOD_STARTED", atSeconds: 720, period: 2 });
+    expect(s.periodStartedAtSeconds).toBe(720);
+    // Play on — the anchor is where the period BEGAN, not a running clock.
+    s = applyEvent(s, { type: "TICK", atSeconds: 900, deltaSeconds: 180 });
+    expect(s.periodStartedAtSeconds).toBe(720);
+  });
+
+  it("REGRESSION: the period anchor survives a crash restore, so no stored match needs migrating", () => {
+    const players = makeSquad(8);
+    const match = makeMatch(5, players);
+    const lineup: LineupAssignment[] = buildPlan(match, players).startingLineup.assignments;
+    // A log exactly as it is persisted — the anchor is nowhere in it; PERIOD_STARTED.atSeconds
+    // already carries the truth, which is why the derived field needs no schema change.
+    const log: MatchEvent[] = [
+      { type: "MATCH_STARTED", atSeconds: 0, lineup },
+      { type: "TICK", atSeconds: 720, deltaSeconds: 720 },
+      { type: "PERIOD_ENDED", atSeconds: 720, period: 1 },
+      { type: "PERIOD_STARTED", atSeconds: 720, period: 2 },
+      { type: "TICK", atSeconds: 800, deltaSeconds: 80 },
+    ];
+    const rebuilt = rebuildLiveState(match, players, log);
+    expect(rebuilt.period).toBe(2);
+    expect(rebuilt.periodStartedAtSeconds).toBe(720);
+    expect(rebuilt.elapsedSeconds).toBe(800);
+  });
+
   it("tracks GK seconds separately", () => {
     const { state } = startedState();
     const gkId = Object.values(state.players).find((p) => p.currentSlot === "GK")!.playerId;

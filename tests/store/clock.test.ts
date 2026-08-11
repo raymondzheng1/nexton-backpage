@@ -9,7 +9,10 @@
 import { describe, expect, it } from "vitest";
 import { applyEvent, buildPlan, initLiveState, type LineupAssignment, type Match, type Player } from "../../src/engine/index";
 import {
+  canEndPeriodEarly,
   elapsedInPeriodSeconds,
+  periodEndSeconds,
+  regulationEndSeconds,
   remainingInPeriodSeconds,
   shouldKeepNextChange,
   wallClockCatchUp,
@@ -175,10 +178,13 @@ describe("time remaining in the period (basketball's countdown)", () => {
   // 2 x 18' basketball — the app's default for the sport.
   const config = makeMatch(5, players, { sport: "basketball", periods: 2, periodLengthMinutes: 18 });
   const match = savedMatch(config, players, null);
+  // Every case in THIS block models uniform periods (nothing ended early), so period n begins one
+  // full period length after n−1. The early-end block below sets the anchor explicitly instead.
   const at = (elapsedSeconds: number, period: number) => ({
     ...runningLive(config, players, 0),
     elapsedSeconds,
     period,
+    periodStartedAtSeconds: (period - 1) * 18 * 60,
   });
 
   it("counts down from the full period at tip off", () => {
@@ -192,7 +198,7 @@ describe("time remaining in the period (basketball's countdown)", () => {
   it("resets for the second period instead of counting the whole match", () => {
     // THE ONE THAT MATTERS: elapsedSeconds is cumulative, so 20' elapsed in period 2 is only 2'
     // into that period — 16' left, not the -2' a naive `total - elapsed` would give.
-    expect(elapsedInPeriodSeconds(match, at(20 * 60, 2))).toBe(2 * 60);
+    expect(elapsedInPeriodSeconds(at(20 * 60, 2))).toBe(2 * 60);
     expect(remainingInPeriodSeconds(match, at(20 * 60, 2))).toBe(16 * 60);
   });
 
@@ -207,7 +213,139 @@ describe("time remaining in the period (basketball's countdown)", () => {
 
   it("never goes negative if a stored state has a period ahead of the clock", () => {
     // Defensive: a merged or recovered log could pair a high period with a low elapsed.
-    expect(elapsedInPeriodSeconds(match, at(60, 2))).toBe(0);
+    expect(elapsedInPeriodSeconds(at(60, 2))).toBe(0);
     expect(remainingInPeriodSeconds(match, at(60, 2))).toBe(18 * 60);
+  });
+});
+
+/**
+ * Youth periods finish early all the time — the ref blows up, it's freezing, a team has to leave.
+ * Everything downstream of the clock used to anchor "where are we in this period?" to
+ * `(period − 1) × periodLength`, which silently assumes every period ran its full length. End the
+ * first quarter of a 4×15 at 12:00 and that formula still put quarter 2's whistle at the fixed 30:00
+ * mark — an 18-minute quarter. `LiveState.periodStartedAtSeconds` is the missing truth these pin.
+ */
+describe("a period ended EARLY does not stretch the next one", () => {
+  const players = makeSquad(8);
+  const quarters = makeMatch(5, players, { periods: 4, periodLengthMinutes: 15 });
+  const quartersMatch = savedMatch(quarters, players, null);
+
+  /** Kick off, play `seconds`, blow the whistle early, restart the next period from right there. */
+  function endedEarlyAt(config: typeof quarters, seconds: number, period: number) {
+    const played = applyEvent(runningLive(config, players, seconds), {
+      type: "PERIOD_ENDED",
+      atSeconds: seconds,
+      period,
+    });
+    return applyEvent(played, { type: "PERIOD_STARTED", atSeconds: seconds, period: period + 1 });
+  }
+
+  it("REGRESSION: period 2's whistle is a full period after the RESTART, not at the fixed 2×15′ mark", () => {
+    const live = endedEarlyAt(quarters, 12 * 60, 1); // ref blew up at 12:00 of a 15′ quarter
+    expect(live.periodStartedAtSeconds).toBe(12 * 60);
+    // The bug: `live.period * periodLength` = 30:00, which would have run quarter 2 for 18 minutes.
+    expect(periodEndSeconds(quartersMatch, live)).toBe(27 * 60);
+    // …and nothing of quarter 2 has been played yet at the moment it restarts.
+    expect(elapsedInPeriodSeconds(live)).toBe(0);
+    expect(remainingInPeriodSeconds(quartersMatch, live)).toBe(15 * 60);
+  });
+
+  it("REGRESSION: the period countdown is right after an early end (basketball's scoreboard)", () => {
+    const bball = makeMatch(5, players, { sport: "basketball", periods: 2, periodLengthMinutes: 18 });
+    const bballMatch = savedMatch(bball, players, null);
+    // Period 1 called at 11:00 of 18; period 2 tips off there and runs its own 18.
+    let live = endedEarlyAt(bball, 11 * 60, 1);
+    live = applyEvent(live, { type: "TICK", atSeconds: 15 * 60, deltaSeconds: 4 * 60 });
+    // 4:00 into period 2 ⇒ 14:00 left. Anchored to the schedule it read 15:00 elapsed of a 36′ game
+    // = "period 2 is 15 minutes old", showing 3:00 left with 14 still to play.
+    expect(elapsedInPeriodSeconds(live)).toBe(4 * 60);
+    expect(remainingInPeriodSeconds(bballMatch, live)).toBe(14 * 60);
+  });
+
+  it("REGRESSION: wallClockCatchUp caps at the REAL boundary after an early end, not the scheduled one", () => {
+    const live = endedEarlyAt(quarters, 12 * 60, 1);
+    // Quarter 2 restarted at 12:00 with the wall clock at T0; the coach then walked away for an hour.
+    const match = savedMatch(quarters, players, {
+      elapsedSeconds: 12 * 60,
+      wallClockISO: new Date(T0).toISOString(),
+    });
+
+    const { working, crossedPeriod } = wallClockCatchUp(live, match, T0 + 3600_000);
+
+    // Capped at quarter 2's real end (12:00 + 15:00), NOT the scheduled 30:00 — which would have
+    // credited every player on the pitch with 3 minutes they never played.
+    expect(working.elapsedSeconds).toBe(27 * 60);
+    expect(crossedPeriod).toBe(true);
+  });
+
+  it("REGRESSION: the abandoned-match added-time cap moves with the final period", () => {
+    const halves = makeMatch(5, players, { periods: 2, periodLengthMinutes: 15 });
+    const live = endedEarlyAt(halves, 10 * 60, 1); // first half called at 10:00
+    const match = savedMatch(halves, players, {
+      elapsedSeconds: 10 * 60,
+      wallClockISO: new Date(T0).toISOString(),
+    });
+
+    // App left open overnight in the final period: capped at that period's end + half a period of
+    // added time (10:00 + 15:00 + 7:30), not the scheduled 30:00 + 7:30 — the 5 lost minutes of the
+    // first half must not come back as added time in the second.
+    const { working } = wallClockCatchUp(live, match, T0 + 20 * 3600_000);
+    expect(working.elapsedSeconds).toBe(32.5 * 60);
+  });
+
+  it("REGRESSION: regulation time is up when the FINAL period has run its length, not at the scheduled total", () => {
+    const halves = makeMatch(5, players, { periods: 2, periodLengthMinutes: 15 });
+    const halvesMatch = savedMatch(halves, players, null);
+    const live = endedEarlyAt(halves, 10 * 60, 1);
+    // Second half started at 10:00, so the final whistle is due at 25:00 — asking the coach "play on
+    // into added time?" at the scheduled 30:00 would arrive five minutes after the game was over.
+    expect(regulationEndSeconds(halvesMatch, live)).toBe(25 * 60);
+    // Before the final period the scheduled total still answers it (the clock auto-breaks first).
+    expect(regulationEndSeconds(halvesMatch, runningLive(halves, players, 60))).toBe(30 * 60);
+  });
+
+  it("REGRESSION: accrued minutes are untouched by ending a period early and restarting", () => {
+    const before = runningLive(quarters, players, 12 * 60);
+    const after = endedEarlyAt(quarters, 12 * 60, 1);
+    for (const p of Object.values(before.players)) {
+      const then = after.players[p.playerId]!;
+      expect(then.secondsOnField).toBe(p.secondsOnField);
+      expect(then.secondsAsGk).toBe(p.secondsAsGk);
+      expect(then.secondsBySlot).toEqual(p.secondsBySlot);
+      expect(then.onField).toBe(p.onField);
+    }
+    expect(after.elapsedSeconds).toBe(before.elapsedSeconds);
+  });
+});
+
+/**
+ * The end-period control's visibility rule, tested where the UI can't be: in the FINAL period there
+ * must be no such action, because ending the last period early IS ending the match and "End match"
+ * already does that properly (full-time summary, season totals).
+ */
+describe("who may end a period early", () => {
+  const players = makeSquad(8);
+  const quarters = makeMatch(5, players, { periods: 4, periodLengthMinutes: 15 });
+  const match = savedMatch(quarters, players, null);
+  const inPeriod = (period: number) => ({ ...runningLive(quarters, players, 60), period });
+
+  it("offered in every period but the last", () => {
+    expect(canEndPeriodEarly(match, inPeriod(1))).toBe(true);
+    expect(canEndPeriodEarly(match, inPeriod(2))).toBe(true);
+    expect(canEndPeriodEarly(match, inPeriod(3))).toBe(true);
+  });
+
+  it("REGRESSION: never offered in the FINAL period — that's what End match is for", () => {
+    expect(canEndPeriodEarly(match, inPeriod(4))).toBe(false);
+    // A single-period game is all final period.
+    const onePeriod = makeMatch(5, players, { periods: 1, periodLengthMinutes: 15 });
+    expect(canEndPeriodEarly(savedMatch(onePeriod, players, null), runningLive(onePeriod, players, 60))).toBe(false);
+  });
+
+  it("not offered unless the clock is running (pre-match, paused, at the break, full time)", () => {
+    const running = inPeriod(1);
+    for (const status of ["pre-match", "paused", "period-break", "full-time"] as const) {
+      expect(canEndPeriodEarly(match, { ...running, status })).toBe(false);
+    }
   });
 });

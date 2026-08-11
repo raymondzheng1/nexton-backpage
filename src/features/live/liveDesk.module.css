@@ -43,8 +43,18 @@
 .clockRow {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 6px;
+}
+/* Hold + End half. Grouped so they wrap to a second line TOGETHER: on basketball the count-down
+   aside eats the width the two of them need, and a lone button dropping below the clock while its
+   twin stayed up top would read as two unrelated controls. Right-aligned when it does wrap. */
+.clockBtns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 /* Basketball's period clock runs DOWN; elapsed still leads, this rides beside it. */
 .clockAside {

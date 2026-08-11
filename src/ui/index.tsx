@@ -27,10 +27,15 @@ export function mins(seconds: number): string {
   return `${Math.round(seconds / 60)}′`;
 }
 
-/** NEXT + red ON. The one piece of brand in the whole product. */
-export function Wordmark({ large = false }: { large?: boolean }) {
+/**
+ * NEXT + red ON. The one piece of brand in the whole product.
+ *
+ * `onInk` is required on any dark surface — the default is ink-coloured, so on the live screen's
+ * inverted header it renders black on black and only the red "ON" is visible.
+ */
+export function Wordmark({ large = false, onInk = false }: { large?: boolean; onInk?: boolean }) {
   return (
-    <span className={cx(styles.wordmark, large && styles.wordmarkLarge)}>
+    <span className={cx(styles.wordmark, large && styles.wordmarkLarge, onInk && styles.wordmarkOnInk)}>
       NEXT<span className={styles.wordmarkOn}>ON</span>
     </span>
   );

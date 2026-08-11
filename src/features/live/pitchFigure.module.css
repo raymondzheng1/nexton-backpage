@@ -1,0 +1,168 @@
+/*
+ * PITCH FIGURE — the match photo, drawn.
+ *
+ * Same recipe as the marketing back page's photo (backPage.module.css §"the match photo"): a
+ * halftone dot screen over newsprint grey, the markings inked over it, the players as discs. No new
+ * colours, no new typeface, and the only curve in the whole thing is the players themselves —
+ * because a player in a newspaper diagram is a circle.
+ */
+
+.figure {
+  margin: 14px 0 0;
+  border: 1px solid var(--ink);
+  padding: 10px;
+}
+
+/* Halftone: a dot screen over flat newsprint grey, exactly as a scanned photo prints. */
+.halftone {
+  position: relative;
+  /*
+   * Exactly the markings' 100×132 viewBox, so nothing is distorted — and, on the narrowest phone,
+   * just enough height that a defender's caption plate clears the keeper's disc below it.
+   */
+  aspect-ratio: 1 / 1.32;
+  background-color: var(--halftone);
+  background-image: radial-gradient(circle, rgba(20, 19, 17, 0.22) 1px, transparent 1.4px);
+  background-size: 5px 5px;
+  overflow: hidden;
+  /*
+   * Discs size against the PICTURE, not the viewport: a tablet gets bigger tokens with no media
+   * query, and a phone still clears the 44px tap floor. The units are resolved on .token, because
+   * an element cannot query itself.
+   */
+  container-type: inline-size;
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── the players ──────────────────────────────────────────────────────────── */
+
+.token {
+  /* Plain fallback first for engines without container-query units (iOS < 16). */
+  --disc: 44px;
+  --disc: clamp(44px, 12cqw, 54px);
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: var(--disc);
+  height: var(--disc);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  /* The caption hangs below the disc; some UAs clip button overflow. */
+  overflow: visible;
+}
+.tokenBtn:disabled {
+  cursor: default;
+}
+/* A player being touched, or chosen, rises above their neighbours — plate and all. */
+.tokenBtn:hover,
+.tokenBtn:focus-visible {
+  z-index: 4;
+}
+.tokenSel {
+  z-index: 5;
+}
+
+.disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  overflow: hidden;
+  font-weight: 900;
+  line-height: 1.02;
+  text-align: center;
+  /* A long first name breaks onto a second line rather than bursting the circle. */
+  overflow-wrap: anywhere;
+}
+.discSolid {
+  border: 3px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+/* The engine wants this one off — a sub-editor's red ring round a player in the picture. */
+.discOutline {
+  border: 3px solid var(--red);
+  background: rgba(245, 242, 234, 0.94);
+  color: var(--ink);
+}
+/* Just came on. One beat of emphasis, then back to plain newsprint. */
+.discFlash {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(217, 43, 33, 0.35);
+}
+.tokenSel .disc {
+  box-shadow: 0 0 0 3px var(--red);
+}
+
+.glove {
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Keep-on is a hard constraint the coach set; it belongs in the picture, not only in the table. */
+.lock {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 10px;
+  line-height: 1;
+  padding: 1px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+/*
+ * The caption — minutes, glyph, word. On a paper plate rather than straight onto the halftone:
+ * status ink on flat grey is too low-contrast for the one number a coach scans for mid-match.
+ */
+.cap {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  /* The disc is the tap target; the plate must never steal a neighbour's tap. */
+  pointer-events: none;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  padding: 1px 4px;
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+/* Second of a tight pair: the plate hangs above the disc, clear of its neighbour's (see PitchFigure). */
+.capUp {
+  top: auto;
+  bottom: calc(100% + 3px);
+}
+.capOn {
+  color: var(--st-on);
+}
+.capUnder {
+  color: var(--st-under);
+}
+.capOver {
+  color: var(--st-over);
+}
+.capNote {
+  color: var(--ink-muted);
+}
+
+.figCaption {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-body);
+}

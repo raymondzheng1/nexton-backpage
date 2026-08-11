@@ -7,9 +7,10 @@
  * a row the coach taps, edits, snoozes or ignores, and every confirmation goes through the store's
  * serialised commit queue so two fast taps can never double-book a slot.
  *
- * Restyled from the original live screen; the behaviour is a straight port. The old design's pitch
- * graphic is replaced by the newspaper squad tables — a back page prints a team sheet, not a
- * formation diagram — so tap-two-to-swap now happens between table rows rather than pitch tokens.
+ * Restyled from the original live screen; the behaviour is a straight port. The squad is printed
+ * BOTH ways: a drawn match photo (PitchFigure) for the glance — where everyone is standing, with
+ * their minutes on them — and the newspaper tables underneath for the detail. Both are the same
+ * control, so tap-two-to-swap works between a disc in the picture and a row in a table.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -42,7 +43,7 @@ import {
 import { useAppStore } from "@/store/appStore";
 import { useLiveStore } from "@/store/liveStore";
 import { newId } from "@/store/ids";
-import { remainingInPeriodSeconds, totalSeconds } from "@/store/clock";
+import { canEndPeriodEarly, regulationEndSeconds, remainingInPeriodSeconds, totalSeconds } from "@/store/clock";
 import { slotFullName, slotShortName, sportOf } from "@/features/sports";
 import {
   buildMatchFeed,
@@ -54,6 +55,7 @@ import {
   type FeedLabels,
   type TokenStatus,
 } from "@/features/live";
+import { PitchFigure, type FigurePlayer } from "@/features/live/PitchFigure";
 import { ProjectedMinutes, projectedRows } from "@/features/plan/ProjectedMinutes";
 import {
   Button,
@@ -202,7 +204,7 @@ export default function LiveMatchPage() {
   const [sheet, setSheet] = useState<Recommendation | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [flashIds, setFlashIds] = useState<string[]>([]);
-  const [confirmKind, setConfirmKind] = useState<"end" | "restart" | "fulltime" | null>(null);
+  const [confirmKind, setConfirmKind] = useState<"end" | "endperiod" | "restart" | "fulltime" | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [goalOpen, setGoalOpen] = useState(false);
@@ -368,9 +370,12 @@ export default function LiveMatchPage() {
   }, [live, nextChangeAt, openSuggestion, prefs.sound, prefs.vibrate]);
 
   // Full time reached: don't auto-freeze — alert + ask once whether to end or play on (added time).
+  // Measured against regulationEndSeconds, not the scheduled total: once a period has been ended
+  // early the clock lags the schedule for good, and a fixed total would ask "play on?" minutes after
+  // the game was actually over.
   useEffect(() => {
     if (!match || !live || live.status !== "running") return;
-    if (live.elapsedSeconds < totalSeconds(match)) {
+    if (live.elapsedSeconds < regulationEndSeconds(match, live)) {
       fullTimePromptedRef.current = false; // re-arm (e.g. after a restart)
       return;
     }
@@ -510,8 +515,11 @@ export default function LiveMatchPage() {
     .join("-");
 
   const running = live.status === "running";
-  const inExtraTime = running && live.elapsedSeconds >= total;
+  const inExtraTime = running && live.elapsedSeconds >= regulationEndSeconds(match, live);
   const periodRemaining = remainingInPeriodSeconds(match, live);
+  const canEndPeriod = canEndPeriodEarly(match, live);
+  // The sport's own word, lowercased for mid-sentence use: "half" (football) / "period" (basketball).
+  const periodWord = cfg.periodLabel.toLowerCase();
   const pulseId = sheet?.primary[0]?.playerOff ?? panelRec?.primary[0]?.playerOff ?? null;
   // Only the windows still AHEAD — past ones are history and belong in the match report, where what
   // really happened is recorded rather than what was planned.
@@ -1016,6 +1024,29 @@ export default function LiveMatchPage() {
           </div>
 
           <SectionHead>Starting {match.config.onFieldCount}</SectionHead>
+          {/* The team sheet as a picture, before it's a list. Nothing is selectable yet — there are
+              no live actions before kick-off — so this prints as a plain figure. */}
+          <PitchFigure
+            surface={cfg.surface}
+            players={startingLineup.map(
+              (a): FigurePlayer => ({
+                id: a.playerId,
+                name: nameOf(a.playerId),
+                slot: a.slot,
+                locked: false,
+                secondsOnField: 0,
+                status: null,
+                flagged: false,
+                note: slotShortName(a.slot),
+              }),
+            )}
+            caption={
+              <>
+                <strong>TEAM SHEET:</strong> how you line up at {cfg.startLabel.toLowerCase()}. The
+                full names and positions are listed below.
+              </>
+            }
+          />
           <div>
             {startingLineup.map((a, i) => (
               <div
@@ -1084,6 +1115,20 @@ export default function LiveMatchPage() {
       ? { label: "Resume the clock", text: "▶ Play", run: () => void store.getState().resume() }
       : null;
 
+  // The words under the picture. At full time it stops being a control and becomes the last frame.
+  const figureCaption =
+    live.status === "full-time" ? (
+      <>
+        <strong>{cfg.endLabel.toUpperCase()}:</strong> the {match.config.onFieldCount}{" "}
+        {cfg.onSurfaceLabel} at the whistle, with the minutes each of them finished on.
+      </>
+    ) : (
+      <>
+        <strong>PICTURED:</strong> your {match.config.onFieldCount} {cfg.onSurfaceLabel} at{" "}
+        {mins(live.elapsedSeconds)}. Tap a player for their actions, tap two to swap them.
+      </>
+    );
+
   return (
     <main className={styles.page} style={{ display: "flex", flexDirection: "column", paddingBottom: 0 }}>
       <header className={styles.liveHeader}>
@@ -1092,7 +1137,7 @@ export default function LiveMatchPage() {
             <Link href={`/teams/${teamId}`} className={desk.liveBack} aria-label="Back to the team">
               ←
             </Link>
-            <Wordmark />
+            <Wordmark onInk />
           </span>
           <span className={styles.liveBug}>
             <span className={cx(styles.liveDot, !running && desk.liveDotOff)} aria-hidden />
@@ -1118,16 +1163,37 @@ export default function LiveMatchPage() {
             </span>
           )}
           <span className={desk.spacer} />
-          {clockAction && (
-            <button
-              type="button"
-              className={cx(styles.holdBtn, desk.holdCaps)}
-              onClick={clockAction.run}
-              aria-label={clockAction.label}
-            >
-              {clockAction.text}
-            </button>
-          )}
+          {/* The clock's own controls, kept together and wrapping as a unit so basketball's
+              count-down aside doesn't squeeze them off the line at 375px. */}
+          <div className={desk.clockBtns}>
+            {clockAction && (
+              <button
+                type="button"
+                className={cx(styles.holdBtn, desk.holdCaps)}
+                onClick={clockAction.run}
+                aria-label={clockAction.label}
+              >
+                {clockAction.text}
+              </button>
+            )}
+            {/* Youth games finish a period early all the time — the ref blows up, it's freezing, a
+                team has to leave. Without this the only way to stop the clock is Hold, which leaves
+                the match stuck mid-period forever. It sits BESIDE Hold because it is a clock action
+                and the clock is what the coach is looking at when the whistle goes early; it is also
+                a long way from "Sub now" in the sticky bar, which is the button they actually tap all
+                game. Deliberately absent in the FINAL period — ending that early is ending the match,
+                and "End match" already does it properly (see canEndPeriodEarly). */}
+            {canEndPeriod && (
+              <button
+                type="button"
+                className={cx(styles.holdBtn, desk.holdCaps)}
+                onClick={() => setConfirmKind("endperiod")}
+                aria-label={`End ${periodWord} ${live.period} now`}
+              >
+                End {periodWord}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1233,6 +1299,28 @@ export default function LiveMatchPage() {
         )}
 
         <SectionHead>On the {cfg.surfaceLabel.toLowerCase()}</SectionHead>
+        {/* THE PICTURE, then the table. A coach mid-match wants the glance first — who is standing
+            where, and how many minutes they're carrying — and the detail second. Tapping a disc
+            runs the same handler as tapping its row, so the two are one control. */}
+        <PitchFigure
+          surface={cfg.surface}
+          players={onField.map(
+            (p): FigurePlayer => ({
+              id: p.playerId,
+              name: nameOf(p.playerId),
+              slot: p.currentSlot,
+              locked: p.locked,
+              secondsOnField: p.secondsOnField,
+              status: statusOf(p.playerId),
+              flagged: pulseId === p.playerId,
+            }),
+          )}
+          onSelect={handleSelect}
+          selectedId={selected}
+          flashIds={flashIds}
+          frozen={live.status === "full-time"}
+          caption={figureCaption}
+        />
         <div>
           {onField.map((p, i) => squadRow(p.playerId, { pitch: true, last: i === onField.length - 1 }))}
         </div>
@@ -1733,7 +1821,8 @@ export default function LiveMatchPage() {
         </Sheet>
       )}
 
-      {/* End / restart / full-time */}
+      {/* End period / end match / restart / full-time. Every one of these is costly to mis-tap in
+          the middle of a game, so they all come through this one sheet. */}
       {confirmKind && (
         <Sheet onClose={() => setConfirmKind(null)}>
           <h2 className={desk.sheetTitle}>
@@ -1741,14 +1830,18 @@ export default function LiveMatchPage() {
               ? cfg.endLabel
               : confirmKind === "restart"
                 ? "Restart the match?"
-                : "End the match?"}
+                : confirmKind === "endperiod"
+                  ? `End the ${periodWord} now?`
+                  : "End the match?"}
           </h2>
           <p className={desk.body}>
             {confirmKind === "fulltime"
               ? "Regulation time is up. End the match, or play on into added time?"
               : confirmKind === "restart"
                 ? "This wipes the clock and every change and returns to your starting lineup. It can't be undone."
-                : "You'll go to the final edition and these minutes carry into the season. It can't be undone."}
+                : confirmKind === "endperiod"
+                  ? `The clock stops at ${clockTime(live.elapsedSeconds)} and it's ${cfg.breakLabel.toLowerCase()}. ${cfg.periodLabel} ${live.period + 1} still gets its full ${match.config.periodLengthMinutes} minutes from the restart, and nobody's minutes change.`
+                  : "You'll go to the final edition and these minutes carry into the season. It can't be undone."}
           </p>
           <div className={desk.sheetStack}>
             {confirmKind === "restart" ? (
@@ -1760,6 +1853,16 @@ export default function LiveMatchPage() {
                 }}
               >
                 Restart match
+              </Button>
+            ) : confirmKind === "endperiod" ? (
+              <Button
+                kind="ink"
+                onClick={() => {
+                  void store.getState().endPeriod();
+                  setConfirmKind(null);
+                }}
+              >
+                End {periodWord}
               </Button>
             ) : (
               <Button

@@ -221,6 +221,22 @@ export interface LiveState {
   period: number;
   /** Total elapsed match seconds (sum across periods; only advances while running). */
   elapsedSeconds: number;
+  /**
+   * Elapsed match seconds at which the CURRENT period actually kicked off.
+   *
+   * Periods are NOT uniform. A coach can end one early — the ref blows up, it's freezing, a team has
+   * to leave — so "where are we in this period?" cannot be derived from `(period − 1) × periodLength`
+   * the way it used to be: end half 1 at 12:00 of a 4×15 and that formula still puts half 2's whistle
+   * at 30:00, giving it 18 minutes. This is the missing truth; the boundary is
+   * `periodStartedAtSeconds + periodLength`, full stop.
+   *
+   * DERIVED, never persisted. `LiveState` is only ever produced by folding the event log
+   * (`rebuildLiveState`); the store saves `SavedMatch.events`, not this state (see
+   * `src/store/schema.ts` — there is no LiveState schema). The log already carries the truth in
+   * `PERIOD_STARTED.atSeconds`, so every match stored before this field existed replays into a state
+   * that has it: no schema change, no migration.
+   */
+  periodStartedAtSeconds: number;
   /** Per-player live state, keyed by player id. */
   players: Record<string, PlayerLiveState>;
   /** Minute (from kickoff) until which the engine should not suggest the next sub (snooze; §7.6). */
