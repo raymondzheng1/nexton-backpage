@@ -345,11 +345,11 @@ export default function NewMatchPage() {
   if (!team) {
     return (
       <main className={styles.page}>
-        <Masthead back="/" slug="The line-up" />
+        <Masthead back="/teams" slug="The line-up" />
         <Dateline left={ready ? "No such team" : "Late edition"} />
         <div className={styles.gutter}>
           <p className={styles.empty}>{ready ? "That team isn’t on file." : "Fetching the team sheet…"}</p>
-          {ready && <ButtonLink href="/">Back to the front page</ButtonLink>}
+          {ready && <ButtonLink href="/teams">Back to your teams</ButtonLink>}
         </div>
       </main>
     );
